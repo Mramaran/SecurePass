@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strong Password Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-8 bg-slate-800 rounded-3xl shadow-2xl border border-slate-700 transform transition-transform duration-300 hover:scale-[1.01]">
+        <div class="flex flex-col items-center">
+            <!-- Padlock Icon -->
+            <svg class="w-16 h-16 text-cyan-500 mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 11a2 2 0 100 4 2 2 0 000-4z"/>
+                <path d="M12 2a5 5 0 00-5 5v2h-2a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V11a2 2 0 00-2-2h-2V7a5 5 0 00-5-5zm-3 7h6V7a3 3 0 00-6 0v2z"/>
+            </svg>
+            <h1 class="text-3xl font-bold text-gray-100 text-center mb-2">SecurePass</h1>
+            <p class="text-center text-gray-400 mb-8">Generate, save, and manage your passwords securely.</p>
+        </div>
+        
+        <!-- User Status and UI -->
+        <div id="auth-ui">
+            <div id="auth-status" class="text-center mb-4 text-sm text-gray-400">
+                <span id="user-info">Please sign in to save passwords.</span>
+                <button id="logout-btn" class="hidden ml-2 text-red-500 hover:text-red-700 font-semibold text-sm">Sign Out</button>
+            </div>
+            <div id="auth-form" class="space-y-4 mb-6">
+                <input type="email" id="email" placeholder="Email" class="w-full p-3 rounded-lg bg-slate-700 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-500">
+                <input type="password" id="password" placeholder="Password" class="w-full p-3 rounded-lg bg-slate-700 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-500">
+                <div class="flex space-x-2">
+                    <button id="auth-btn" class="w-full py-2 bg-cyan-600 text-white font-bold rounded-lg hover:bg-cyan-700 transition duration-300 shadow-md">Sign In</button>
+                    <button id="toggle-auth-mode" class="w-full py-2 bg-slate-700 text-gray-200 font-bold rounded-lg hover:bg-slate-600 transition duration-300 border border-slate-600">Switch to Sign Up</button>
+                </div>
+            </div>
+            <button id="guest-btn" class="w-full py-2 mt-4 text-cyan-500 font-bold rounded-lg hover:text-cyan-600 transition duration-300">
+                Continue as Guest
+            </button>
+        </div>
+
+        <!-- Main Generator UI (Hidden until authenticated) -->
+        <div id="generator-ui" class="hidden">
+            <!-- Profile pic and logout button -->
+            <div class="flex items-center justify-end space-x-2 absolute top-4 right-4 z-10">
+                <img id="profile-pic" src="https://placehold.co/40x40/57534e/ffffff?text=U" alt="Profile Picture" class="rounded-full w-10 h-10 cursor-pointer">
+                <button id="logout-btn-desktop" class="py-2 px-4 text-red-500 hover:text-red-700 font-semibold text-sm hidden">Sign Out</button>
+            </div>
+            <!-- Password Display Area -->
+            <div class="relative mb-6">
+                <input type="text" id="password-output" class="w-full p-4 pr-16 text-xl font-mono text-gray-200 bg-slate-700 rounded-2xl border-2 border-transparent focus:outline-none focus:border-cyan-500 transition-colors" readonly>
+                <button id="copy-button" class="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-cyan-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Options Panel -->
+            <div class="space-y-4">
+                <!-- Password Length -->
+                <div class="flex items-center justify-between">
+                    <label for="password-length" class="text-gray-300 font-medium">Password Length:</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" id="password-length" value="12" min="4" max="32" class="w-16 p-2 rounded-lg bg-slate-700 text-center font-mono text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                </div>
+
+                <!-- Character Options -->
+                <div class="flex flex-col space-y-2">
+                    <label class="inline-flex items-center text-gray-300">
+                        <input type="checkbox" id="include-uppercase" checked class="form-checkbox text-cyan-500 rounded-md focus:ring-cyan-500 bg-slate-700 border-slate-600">
+                        <span class="ml-2">Include Uppercase Letters (A-Z)</span>
+                    </label>
+                    <label class="inline-flex items-center text-gray-300">
+                        <input type="checkbox" id="include-lowercase" checked class="form-checkbox text-cyan-500 rounded-md focus:ring-cyan-500 bg-slate-700 border-slate-600">
+                        <span class="ml-2">Include Lowercase Letters (a-z)</span>
+                    </label>
+                    <label class="inline-flex items-center text-gray-300">
+                        <input type="checkbox" id="include-numbers" checked class="form-checkbox text-cyan-500 rounded-md focus:ring-cyan-500 bg-slate-700 border-slate-600">
+                        <span class="ml-2">Include Numbers (0-9)</span>
+                    </label>
+                    <label class="inline-flex items-center text-gray-300">
+                        <input type="checkbox" id="include-symbols" class="form-checkbox text-cyan-500 rounded-md focus:ring-cyan-500 bg-slate-700 border-slate-600">
+                        <span class="ml-2">Include Symbols (!@#$%)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- App and Username Inputs -->
+            <div class="mt-6 space-y-4">
+                <input type="text" id="app-name" placeholder="App/Website Name" class="w-full p-3 rounded-lg bg-slate-700 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-500">
+                <input type="text" id="username" placeholder="Username/Email" class="w-full p-3 rounded-lg bg-slate-700 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-500">
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex space-x-2 mt-6">
+                <button id="generate-button" class="w-full py-3 bg-cyan-600 text-white font-bold rounded-2xl hover:bg-cyan-700 transition duration-300 transform hover:scale-105 shadow-md">
+                    Generate Password
+                </button>
+                <button id="save-button" class="w-full py-3 bg-teal-600 text-white font-bold rounded-2xl hover:bg-teal-700 transition duration-300 transform hover:scale-105 shadow-md">
+                    Save Password
+                </button>
+            </div>
+            
+            <!-- Message Box -->
+            <div id="message-box" class="hidden mt-4 p-4 rounded-xl text-center font-semibold bg-green-900/40 text-green-300 transition-opacity duration-300 border border-green-800">
+                Password copied to clipboard!
+            </div>
+            
+            <!-- Saved Passwords List -->
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold text-gray-100 mb-4">Saved Passwords</h2>
+                <div id="password-list" class="space-y-3">
+                    <p id="no-passwords" class="text-gray-500 text-center hidden">No passwords saved yet. Save a password to see it here!</p>
+                    <!-- Saved passwords will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, addDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Configuration provided by the user to fix an authentication error.
+        // NOTE: Hardcoding API keys in a public file is not recommended for security reasons.
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV9gM-5XITsuoeczo5yIGJKrg7v3UH9WE",
+            authDomain: "password-6da7f.firebaseapp.com",
+            projectId: "password-6da7f",
+            storageBucket: "password-6da7f.firebasestorage.app",
+            messagingSenderId: "399694299486",
+            appId: "1:399694299486:web:30ec68b917c9511d00cfcf",
+            measurementId: "G-N160VSEJDD"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // UI elements
+        const authUI = document.getElementById('auth-ui');
+        const authForm = document.getElementById('auth-form');
+        const generatorUI = document.getElementById('generator-ui');
+        const userInfo = document.getElementById('user-info');
+        const logoutBtn = document.getElementById('logout-btn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const authBtn = document.getElementById('auth-btn');
+        const toggleAuthModeBtn = document.getElementById('toggle-auth-mode');
+        const guestBtn = document.getElementById('guest-btn');
+        const passwordOutput = document.getElementById('password-output');
+        const copyButton = document.getElementById('copy-button');
+        const generateButton = document.getElementById('generate-button');
+        const saveButton = document.getElementById('save-button');
+        const messageBox = document.getElementById('message-box');
+        const passwordList = document.getElementById('password-list');
+        const noPasswordsMessage = document.getElementById('no-passwords');
+        const appNameInput = document.getElementById('app-name');
+        const usernameInput = document.getElementById('username');
+        const logoutBtnDesktop = document.getElementById('logout-btn-desktop');
+
+        // Generator logic elements
+        const lengthInput = document.getElementById('password-length');
+        const includeUppercase = document.getElementById('include-uppercase');
+        const includeLowercase = document.getElementById('include-lowercase');
+        const includeNumbers = document.getElementById('include-numbers');
+        const includeSymbols = document.getElementById('include-symbols');
+
+        // Character sets
+        const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+        const numberChars = '0123456789';
+        const symbolChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+
+        let isLoginMode = true;
+
+        // Password Generator Functions
+        function generatePassword() {
+            let characterPool = '';
+            let password = '';
+
+            if (includeUppercase.checked) characterPool += uppercaseChars;
+            if (includeLowercase.checked) characterPool += lowercaseChars;
+            if (includeNumbers.checked) characterPool += numberChars;
+            if (includeSymbols.checked) characterPool += symbolChars;
+
+            const passwordLength = parseInt(lengthInput.value, 10);
+
+            if (characterPool === '' || passwordLength < 4) {
+                passwordOutput.value = 'Select options and length > 3';
+                return;
+            }
+
+            if (includeUppercase.checked) password += uppercaseChars.charAt(Math.floor(Math.random() * uppercaseChars.length));
+            if (includeLowercase.checked) password += lowercaseChars.charAt(Math.floor(Math.random() * lowercaseChars.length));
+            if (includeNumbers.checked) password += numberChars.charAt(Math.floor(Math.random() * numberChars.length));
+            if (includeSymbols.checked) password += symbolChars.charAt(Math.floor(Math.random() * symbolChars.length));
+
+            while (password.length < passwordLength) {
+                const randomChar = characterPool.charAt(Math.floor(Math.random() * characterPool.length));
+                password += randomChar;
+            }
+
+            password = password.split('').sort(() => 0.5 - Math.random()).join('');
+            passwordOutput.value = password;
+        }
+
+        function showMessage(text, isError = false) {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-red-900/40', 'text-red-300', 'border-red-800', 'bg-green-900/40', 'text-green-300', 'border-green-800');
+            if (isError) {
+                messageBox.classList.add('bg-red-900/40', 'text-red-300', 'border-red-800');
+            } else {
+                messageBox.classList.add('bg-green-900/40', 'text-green-300', 'border-green-800');
+            }
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        function copyToClipboard() {
+            passwordOutput.select();
+            passwordOutput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showMessage('Password copied to clipboard!');
+        }
+
+        function validateEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+        // Firebase Auth and Firestore Functions
+        async function savePasswordToFirestore(passwordValue, appName, username) {
+            if (!auth.currentUser) {
+                showMessage("Please sign in to save passwords.", true);
+                return;
+            }
+            if (auth.currentUser.isAnonymous) {
+                showMessage("You are in guest mode. Please sign in to save passwords.", true);
+                return;
+            }
+
+            if (!appName || !username) {
+                showMessage("Please enter both app name and username.", true);
+                return;
+            }
+
+            const userId = auth.currentUser.uid;
+            const passwordsColRef = collection(db, `/artifacts/${appId}/users/${userId}/passwords`);
+
+            try {
+                await addDoc(passwordsColRef, {
+                    appName: appName,
+                    username: username,
+                    password: passwordValue,
+                    createdAt: Date.now()
+                });
+                showMessage("Password saved successfully!");
+                appNameInput.value = '';
+                usernameInput.value = '';
+            } catch (error) {
+                console.error("Error saving password: ", error);
+                showMessage("Failed to save password.", true);
+            }
+        }
+
+        async function deletePasswordFromFirestore(docId) {
+            if (!auth.currentUser) return;
+            const userId = auth.currentUser.uid;
+            const passwordDocRef = doc(db, `/artifacts/${appId}/users/${userId}/passwords/${docId}`);
+
+            try {
+                await deleteDoc(passwordDocRef);
+                showMessage("Password deleted.", true);
+            } catch (error) {
+                console.error("Error deleting password: ", error);
+                showMessage("Failed to delete password.", true);
+            }
+        }
+
+        function renderPasswords(passwords) {
+            passwordList.innerHTML = '';
+            if (passwords.length === 0) {
+                noPasswordsMessage.classList.remove('hidden');
+            } else {
+                noPasswordsMessage.classList.add('hidden');
+                passwords.forEach(pw => {
+                    const pwEl = document.createElement('div');
+                    pwEl.className = 'flex flex-col p-4 bg-slate-700 rounded-lg shadow-sm';
+                    pwEl.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-gray-200">${pw.appName}</span>
+                            <button class="text-red-500 hover:text-red-700 delete-btn" data-id="${pw.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Username: ${pw.username}</p>
+                        <p class="font-mono text-gray-200 break-all">${pw.password}</p>
+                    `;
+                    passwordList.appendChild(pwEl);
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const docId = e.currentTarget.getAttribute('data-id');
+                        deletePasswordFromFirestore(docId);
+                    });
+                });
+            }
+        }
+
+        // Event Listeners
+        toggleAuthModeBtn.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authBtn.textContent = isLoginMode ? 'Sign In' : 'Sign Up';
+            toggleAuthModeBtn.textContent = isLoginMode ? 'Switch to Sign Up' : 'Switch to Sign In';
+        });
+
+        authBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            if (!email || !password) {
+                showMessage("Please enter both email and password.", true);
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                showMessage("Please enter a valid email address.", true);
+                return;
+            }
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+                if (error.code === 'auth/operation-not-allowed') {
+                    const message = "Email/Password sign-in is disabled. Please enable it in your Firebase project console under Authentication -> Sign-in method.";
+                    showMessage(message, true);
+                    console.error(message);
+                } else {
+                    showMessage(error.message, true);
+                }
+            }
+        });
+
+        guestBtn.addEventListener('click', async () => {
+            await signInAnonymously(auth);
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+        });
+        
+        logoutBtnDesktop.addEventListener('click', async () => {
+            await signOut(auth);
+        });
+
+        generateButton.addEventListener('click', generatePassword);
+        copyButton.addEventListener('click', copyToClipboard);
+        saveButton.addEventListener('click', () => {
+            const passwordValue = passwordOutput.value;
+            const appNameValue = appNameInput.value;
+            const usernameValue = usernameInput.value;
+            if (passwordValue && passwordValue !== 'Select options and length > 3') {
+                savePasswordToFirestore(passwordValue, appNameValue, usernameValue);
+            }
+        });
+
+        // Auth State Change Listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                authUI.classList.add('hidden');
+                generatorUI.classList.remove('hidden');
+
+                if (user.isAnonymous) {
+                    userInfo.textContent = 'Signed in as a Guest.';
+                    saveButton.classList.add('hidden');
+                    document.getElementById('password-list').classList.add('hidden');
+                    document.getElementById('no-passwords').classList.add('hidden');
+                    document.querySelector('h2').classList.add('hidden');
+                    logoutBtn.classList.add('hidden');
+                    logoutBtnDesktop.classList.remove('hidden');
+                } else {
+                    userInfo.textContent = `Signed in as: ${user.email}`;
+                    saveButton.classList.remove('hidden');
+                    document.getElementById('password-list').classList.remove('hidden');
+                    document.querySelector('h2').classList.remove('hidden');
+                    logoutBtn.classList.add('hidden');
+                    logoutBtnDesktop.classList.remove('hidden');
+
+                    const passwordsColRef = collection(db, `/artifacts/${appId}/users/${user.uid}/passwords`);
+                    onSnapshot(passwordsColRef, (querySnapshot) => {
+                        const passwords = [];
+                        querySnapshot.forEach(doc => {
+                            passwords.push({ id: doc.id, ...doc.data() });
+                        });
+                        renderPasswords(passwords);
+                    }, (error) => {
+                        console.error("Error fetching passwords: ", error);
+                    });
+                }
+            } else {
+                userInfo.textContent = 'Please sign in to save passwords.';
+                logoutBtn.classList.add('hidden');
+                authUI.classList.remove('hidden');
+                generatorUI.classList.add('hidden');
+                 // Attempt anonymous sign-in if no user is found
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Firebase Auth Error:", error);
+                }
+            }
+        });
+
+        // Initial password generation on load
+        document.addEventListener('DOMContentLoaded', () => {
+            generatePassword();
+        });
+    </script>
+</body>
+</html>
